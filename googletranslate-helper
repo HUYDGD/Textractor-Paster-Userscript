@@ -1,0 +1,49 @@
+// ==UserScript==
+// @name         Google Translate - Auto Copy Translation Result
+// @namespace    http://tampermonkey.net/
+// @version      1.1
+// @description  Automatically copies the translated text from Google Translate to the clipboard when it updates.
+// @match        https://translate.google.com/*
+// @grant        GM.setClipboard
+// @icon         https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_92x30dp.png
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // Function to handle clipboard copying
+    function copyToClipboard(text) {
+        GM.setClipboard(text);
+        console.log('Copied to clipboard:', text);
+    }
+
+    // Create a MutationObserver to watch for changes in the translation result
+    const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'childList') {
+                // Find all spans inside the translation result container
+                const resultSpans = document.querySelectorAll('div span[jsname="W297wb"]');
+                if (resultSpans && resultSpans.length > 0) {
+                    let translatedText = '';
+
+                    // Concatenate the text content from all span elements
+                    resultSpans.forEach(span => {
+                        translatedText += span.textContent.trim() + ' ';
+                    });
+
+                    if (translatedText.trim()) {
+                        copyToClipboard(translatedText.trim());
+                    }
+                }
+            }
+        }
+    });
+
+    // Start observing the translation container
+    const container = document.querySelector('body');
+    if (container) {
+        observer.observe(container, { childList: true, subtree: true });
+    } else {
+        console.error('Translation container not found.');
+    }
+})();
